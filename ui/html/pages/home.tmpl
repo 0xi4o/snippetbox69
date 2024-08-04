@@ -1,0 +1,25 @@
+{{define "title"}}Home{{end}}
+
+{{define "main"}}
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <h2 style="margin: 0;top: initial;">Latest Snippets</h2>
+    </div>
+    {{if .Snippets}}
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Created</th>
+            <th>Id</th>
+        </tr>
+        {{range .Snippets}}
+        <tr>
+            <td><a href='/snippet/view/{{.ID}}'>{{.Title}}</a></td>
+            <td>{{humanDate .Created}}</td>
+            <td>{{.ID}}</td>
+        </tr>
+        {{end}}
+    </table>
+    {{else}}
+    <p>There's nothing to see here yet!</p>
+    {{end}}
+{{end}}

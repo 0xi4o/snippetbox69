@@ -1,0 +1,2 @@
+{"time":"2024-07-28T21:14:30.843369431+05:30","level":"INFO","source":{"function":"main.main","file":"/home/i4o/Learning/golang/snippetbox/cmd/web/main.go","line":36},"msg":"Starting server:","addr":":4000"}
+{"time":"2024-07-28T21:15:21.411194251+05:30","level":"INFO","source":{"function":"main.main","file":"/home/i4o/Learning/golang/snippetbox/cmd/web/main.go","line":36},"msg":"Starting server:","addr":":4000"}
