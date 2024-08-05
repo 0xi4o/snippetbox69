@@ -48,12 +48,13 @@ func (app *application) serverError(writer http.ResponseWriter, request *http.Re
 
 func (app *application) newTemplateData(request *http.Request) templateData {
 	return templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       app.sessionManager.PopString(request.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.sessionManager.PopString(request.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(request),
 	}
 }
 
-func (app *application) decodePostForm(request *http.Request, dst *snippetCreateForm) error {
+func (app *application) decodePostForm(request *http.Request, dst any) error {
 	err := request.ParseForm()
 	if err != nil {
 		return err
@@ -72,4 +73,8 @@ func (app *application) decodePostForm(request *http.Request, dst *snippetCreate
 	}
 
 	return nil
+}
+
+func (app *application) isAuthenticated(request *http.Request) bool {
+	return app.sessionManager.Exists(request.Context(), "authenticatedUserID")
 }

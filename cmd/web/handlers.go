@@ -16,6 +16,19 @@ type snippetCreateForm struct {
 	validator.Validator `form:"-"`
 }
 
+type userSignupForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
+type userLoginForm struct {
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
 func (app *application) snippetCreatePost(writer http.ResponseWriter, request *http.Request) {
 	var form snippetCreateForm
 
@@ -104,4 +117,123 @@ func (app *application) home(writer http.ResponseWriter, request *http.Request) 
 
 	// execute the template - compile and render
 	app.render(writer, request, http.StatusOK, "home.tmpl", data)
+}
+
+func (app *application) userSignup(writer http.ResponseWriter, request *http.Request) {
+	data := app.newTemplateData(request)
+	data.Form = userSignupForm{}
+
+	app.render(writer, request, http.StatusOK, "signup.tmpl", data)
+}
+
+func (app *application) userSignupPost(writer http.ResponseWriter, request *http.Request) {
+	var form userSignupForm
+
+	err := app.decodePostForm(request, &form)
+	if err != nil {
+		app.clientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password should be at least 8 characters long")
+
+	if !form.Valid() {
+		app.logger.Error("Form values invalid")
+		data := app.newTemplateData(request)
+		data.Form = form
+		app.render(writer, request, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		return
+	}
+
+	err = app.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.AddFieldError("email", "Email address is already in use")
+			data := app.newTemplateData(request)
+			data.Form = form
+			app.render(writer, request, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		} else {
+			app.serverError(writer, request, err)
+		}
+
+		return
+	}
+
+	app.sessionManager.Put(request.Context(), "flash", "Sign up successful. Please log in.")
+
+	http.Redirect(writer, request, "/user/login", http.StatusSeeOther)
+}
+
+func (app *application) userLogin(writer http.ResponseWriter, request *http.Request) {
+	data := app.newTemplateData(request)
+	data.Form = userLoginForm{}
+
+	app.render(writer, request, http.StatusOK, "login.tmpl", data)
+}
+
+func (app *application) userLoginPost(writer http.ResponseWriter, request *http.Request) {
+	var form userLoginForm
+
+	err := app.decodePostForm(request, &form)
+	if err != nil {
+		app.clientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
+	if !form.Valid() {
+		app.logger.Error("Form values invalid")
+		data := app.newTemplateData(request)
+		data.Form = form
+		app.render(writer, request, http.StatusUnprocessableEntity, "login.tmpl", data)
+		return
+	}
+
+	id, err := app.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or password is incorrect")
+			data := app.newTemplateData(request)
+			data.Form = form
+			app.render(writer, request, http.StatusUnprocessableEntity, "login.tmpl", data)
+		} else {
+			app.serverError(writer, request, err)
+			return
+		}
+
+		return
+	}
+
+	err = app.sessionManager.RenewToken(request.Context())
+	if err != nil {
+		app.serverError(writer, request, err)
+		return
+	}
+
+	app.sessionManager.Put(request.Context(), "authenticatedUserID", id)
+
+	http.Redirect(writer, request, "/snippet/create", http.StatusSeeOther)
+}
+
+func (app *application) userLogoutPost(writer http.ResponseWriter, request *http.Request) {
+	err := app.sessionManager.RenewToken(request.Context())
+	if err != nil {
+		app.serverError(writer, request, err)
+		return
+	}
+
+	app.sessionManager.Remove(request.Context(), "authenticatedUserID")
+
+	app.sessionManager.Put(request.Context(), "flash", "You've been logged out successfully!")
+
+	http.Redirect(writer, request, "/user/login", http.StatusSeeOther)
 }
