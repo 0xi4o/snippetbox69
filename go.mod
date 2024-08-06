@@ -9,6 +9,8 @@ require (
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/justinas/alice v1.2.0
+	github.com/justinas/nosurf v1.1.1
+	golang.org/x/crypto v0.25.0
 )
 
 require (
@@ -22,7 +24,6 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/sys v0.22.0 // indirect
 )
