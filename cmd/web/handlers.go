@@ -237,3 +237,7 @@ func (app *application) userLogoutPost(writer http.ResponseWriter, request *http
 
 	http.Redirect(writer, request, "/user/login", http.StatusSeeOther)
 }
+
+func ping(writer http.ResponseWriter, request *http.Request) {
+	writer.Write([]byte("OK"))
+}
