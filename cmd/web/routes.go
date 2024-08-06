@@ -3,15 +3,14 @@ package main
 import (
 	"github.com/justinas/alice"
 	"net/http"
+	"snippetbox.i4o.dev/ui"
 )
 
 func (app *application) routes() http.Handler {
 	// create a servemux (which is like a router in expressjs)
 	mux := http.NewServeMux()
 
-	// create a file server to serve static files
-	fileServer := http.FileServer(http.Dir("./ui/static"))
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
+	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
 
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
